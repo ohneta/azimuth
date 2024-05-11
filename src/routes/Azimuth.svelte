@@ -1,25 +1,43 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-    import Page from './+page.svelte';
 
-	// reactivity value
+	// reactivity values
 	let widthPx  = 0;	// canvas サイズ 幅
 	let heightPx = 0;	// canvas サイズ 高さ
 	let baseX  = 0;		// 方位円の中心X座標
 	let baseY  = 0;		// 方位円の中心Y座標
 	let radius = 0;		// 方位円の半径(方角先の長さ)
 
-	// /**
-	//  * 1ドット　描画
-	//  * @param context 描画対象2Dコンテキスト
-	//  * @param x 開始位置x
-	//  * @param y 開始位置y
-	//  * @param style
-	//  */
-	// const dot = (context: CanvasRenderingContext2D, x: number, y: number, style: string = 'cyan') => {
-	// 	context.fillStyle = style;
-	// 	context.fillRect(x, y, 1, 1);
-	// }
+
+	interface XYByDeg {
+		x: number;
+		y: number;
+	}
+
+	/**
+	 * 方位角(deg)から単位円(半径=1の円周)上の座標を取得する
+	 * @param deg　角度(度数)
+	 * @return object {x:, y:} 単位円上での座標
+	 */
+	const getXYByDeg = (deg: number): XYByDeg => {
+		const rad = deg * Math.PI / 180;
+		return {x: Math.sin(rad), y: Math.cos(rad)}
+	}
+
+	/**
+	 * 方位円上の座標(x, y)から方位角(deg)を取得する
+	 * @param x x座標
+	 * @param y y座標
+	 * @return 方位角 (0〜359°)
+	 */
+	const getDegByXY = (x: number, y: number): number => {
+		let a = x - baseX;
+		let b = y - baseY;
+		let deg = Math.atan(b / a) * 180 / Math.PI;
+		if (0 < a)			deg = deg + 90;
+		else if (0 > a)	deg = deg + 270;
+		return deg;
+	}
 
 	/**
 	 * ライン 描画
@@ -40,30 +58,20 @@
 	}
 
 	/**
-	 * 角度から単位円(半径=1の円周)上の座標を取得する。
-	 *
-	 * @param deg　角度(度数)
-	 * @return object {x:, y:} 単位円上での座標
-	 */
-	const calcCircleAngle = (deg: number): object => {
-		const rad = deg * Math.PI / 180;
-		return {x: Math.sin(rad), y: Math.cos(rad)}
-	}
-
-	/**
-	 * 方位のラインと方位角を描画
-	 * @param context
+	 * 方位ラインと方位角文字列を描画
+	 * @param context canvasの2D context
 	 * @param x 単位円上での描画位置X座標
 	 * @param y 単位円上での描画位置Y座標
+	 * @param degStr 方位角文字列
 	 */
 	const azimuthLine = (context: CanvasRenderingContext2D, x: number, y: number, degStr: string) => {
 		x = x * radius;
 		y = y * radius;
 
-		// ライン描画
+		// 方位ライン描画
 		line(context, baseX, baseY, baseX + x, baseY + y * -1, '#f00');
 
-		// 方位角描画
+		// 方位角文字列描画
 		let fontPx = heightPx / 25
 		if (heightPx < 300) {
 			fontPx = 12;
@@ -93,44 +101,32 @@
   	context.fillText(degStr, textX, textY);
 	}
 
+	/**
+	 * 方位角の線を描画する
+	 * @param context canvasの2D context
+	 */
 	const drawAzimuthLines = (context: CanvasRenderingContext2D) => {
     context.fillStyle = '#f0f0f0';
     context.fillRect(0, 0, widthPx, heightPx);
 
-		let obj = calcCircleAngle(0);	azimuthLine(context, obj.x, obj.y, "0");
-		obj = calcCircleAngle(22.5);	azimuthLine(context, obj.x, obj.y, "22.5");
-		obj = calcCircleAngle(45);		azimuthLine(context, obj.x, obj.y, "45");
-		obj = calcCircleAngle(67.5);	azimuthLine(context, obj.x, obj.y, "67.5");
-		obj = calcCircleAngle(90);		azimuthLine(context, obj.x, obj.y, "90");
-		obj = calcCircleAngle(112.5);	azimuthLine(context, obj.x, obj.y, "112.5");
-		obj = calcCircleAngle(135);		azimuthLine(context, obj.x, obj.y, "135");
-		obj = calcCircleAngle(157.5);	azimuthLine(context, obj.x, obj.y, "157.5");
-		obj = calcCircleAngle(180);		azimuthLine(context, obj.x, obj.y, "180");
-		obj = calcCircleAngle(202.5);	azimuthLine(context, obj.x, obj.y, "202.5");
-		obj = calcCircleAngle(225);		azimuthLine(context, obj.x, obj.y, "225");
-		obj = calcCircleAngle(247.5);	azimuthLine(context, obj.x, obj.y, "247.5");
-		obj = calcCircleAngle(270);		azimuthLine(context, obj.x, obj.y, "270");
-		obj = calcCircleAngle(292.5);	azimuthLine(context, obj.x, obj.y, "292.5");
-		obj = calcCircleAngle(315);		azimuthLine(context, obj.x, obj.y, "315");
-		obj = calcCircleAngle(337.5);	azimuthLine(context, obj.x, obj.y, "337.5");
+		let obj: XYByDeg = getXYByDeg(0);	azimuthLine(context, obj.x, obj.y, "0");
+		obj = getXYByDeg(22.5);						azimuthLine(context, obj.x, obj.y, "22.5");
+		obj = getXYByDeg(45);							azimuthLine(context, obj.x, obj.y, "45");
+		obj = getXYByDeg(67.5);						azimuthLine(context, obj.x, obj.y, "67.5");
+		obj = getXYByDeg(90);							azimuthLine(context, obj.x, obj.y, "90");
+		obj = getXYByDeg(112.5);					azimuthLine(context, obj.x, obj.y, "112.5");
+		obj = getXYByDeg(135);						azimuthLine(context, obj.x, obj.y, "135");
+		obj = getXYByDeg(157.5);					azimuthLine(context, obj.x, obj.y, "157.5");
+		obj = getXYByDeg(180);						azimuthLine(context, obj.x, obj.y, "180");
+		obj = getXYByDeg(202.5);					azimuthLine(context, obj.x, obj.y, "202.5");
+		obj = getXYByDeg(225);						azimuthLine(context, obj.x, obj.y, "225");
+		obj = getXYByDeg(247.5);					azimuthLine(context, obj.x, obj.y, "247.5");
+		obj = getXYByDeg(270);						azimuthLine(context, obj.x, obj.y, "270");
+		obj = getXYByDeg(292.5);					azimuthLine(context, obj.x, obj.y, "292.5");
+		obj = getXYByDeg(315);						azimuthLine(context, obj.x, obj.y, "315");
+		obj = getXYByDeg(337.5);					azimuthLine(context, obj.x, obj.y, "337.5");
 	}
 
-	/**
-	 * 方位円の座標(x, y)の方位角(deg)を求める
-	 *
-	 * @param x x座標
-	 * @param y y座標
-	 * @return 方位角 (0〜359°)
-	 */
-	const mouseToDeg = (x: number, y: number): number => {
-		let a = x - baseX;
-		let b = y - baseY;
-		let deg = Math.atan(b / a) * 180 / Math.PI;
-		if (0 < a)			deg = deg + 90;
-		else if (0 > a)	deg = deg + 270;
-
-		return deg;
-	}
 
 	//--------------------
 	// events
@@ -141,8 +137,8 @@
 	})
 
 	function onResize() {
-  	const canvas: HTMLCanvasElement = document.getElementById("azimuth-canvas");
-    const context: CanvasRenderingContext2D = canvas.getContext("2d");
+  	const canvas: HTMLCanvasElement = document.getElementById("azimuth-canvas") as HTMLCanvasElement;
+    const context: CanvasRenderingContext2D = canvas.getContext("2d")!;
 
 		widthPx  = window.innerWidth - 10;
 		heightPx = window.innerHeight * 0.80;
@@ -157,10 +153,12 @@
 		drawAzimuthLines(context);
 	}
 
-	const handleMove = (({offsetX: x, offsetY: y}) => {
-		const deg: number = mouseToDeg(x, y);
-		const elem = document.getElementById("mouse-deg").innerText = "" + parseInt(deg) + "°";
-	})
+	const handleMove = (e: MouseEvent) => {
+		let x = e.offsetX;
+		let y = e.offsetY;
+		const deg: string = getDegByXY(x, y).toFixed(1);
+		document.getElementById("mouse-deg")!.innerText = deg + "°";
+	}
 	
 
 </script>

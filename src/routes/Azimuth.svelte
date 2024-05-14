@@ -148,7 +148,8 @@
 
 		baseX = widthPx / 2;
 		baseY = heightPx / 2;
-		radius = heightPx / 2 * 0.8;
+		if (widthPx > heightPx)	radius = heightPx / 2 * 0.8;
+		else										radius = widthPx / 2 * 0.6;
 
 		drawAzimuthLines(context);
 	}
@@ -172,4 +173,8 @@
 />
 
 <style>
+canvas {
+  max-width: 100%;
+  display: block;
+}
 </style>

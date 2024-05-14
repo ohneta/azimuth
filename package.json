@@ -23,6 +23,9 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"postcss": "^8.4.38",
+		"postcss-custom-properties": "^13.3.10",
+		"postcss-load-config": "^5.1.0",
 		"svelte-canvas": "^1.2.0"
 	}
 }

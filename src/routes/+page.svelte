@@ -3,8 +3,8 @@
 </script>
 
 <svelte:head>
-	<title>azimuth</title>
-	<meta name="description" content="azimuth test" />
+	<title>方位角</title>
+	<meta name="description" content="azimuth" />
 
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<!-- <meta name="viewport" content="width=320,initial-scale=1"> -->

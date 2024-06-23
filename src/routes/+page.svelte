@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Azimuth from './Azimuth.svelte';
+
+	let drawNullPoint = false;
+
 </script>
 
 <svelte:head>
@@ -12,8 +15,19 @@
 </svelte:head>
 
 <div class="app">
-<h1>方位角</h1>
-		<Azimuth />
+	<h1>方位角</h1>
+
+	<label>
+		<input type="checkbox" bind:checked={drawNullPoint} />
+		直行表示
+	</label>
+
+{#if drawNullPoint}
+	<Azimuth drawNullPoint={drawNullPoint} />
+{:else}
+	<Azimuth drawNullPoint={drawNullPoint} />
+{/if}
+
 </div>
 
 <style>

@@ -21,4 +21,7 @@ buildディレクトリにできたファイルをすべてwebサーバのドキ
 
 ```bash
 npm run build
+
+# ビルド結果をプレビュー
+npm run preview -- --open
 ```

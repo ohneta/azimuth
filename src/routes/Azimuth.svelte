@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
+	export let drawNullPoint = '';
+
+console.log('drawNullPoint = ' + drawNullPoint);
 
 	// reactivity values
 	let widthPx  = 0;	// canvas サイズ 幅
@@ -8,11 +11,17 @@
 	let baseY  = 0;		// 方位円の中心Y座標
 	let radius = 0;		// 方位円の半径(方角先の長さ)
 
+	let mouseDownFlag = false;
+	let mouseDownX = 0;
+	let mouseDownY = 0;
 
 	interface XYByDeg {
 		x: number;
 		y: number;
 	}
+
+	let orthogonalAngleDeg1 = "";
+	let orthogonalAngleDeg2 = "";
 
 	/**
 	 * 方位角(deg)から単位円(半径=1の円周)上の座標を取得する
@@ -48,11 +57,12 @@
 	 * @param y2 終了位置y
 	 * @param style 描画スタイル
 	 */
-	const line = (context: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, style: string = 'red') => {
+	const line = (context: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number = 1, style: string = 'red') => {
 		context.strokeStyle = style;
 		context.beginPath();
 		context.moveTo(x1, y1);
 		context.lineTo(x2, y2);
+		context.lineWidth = width;
 		context.stroke();
 //		context.closePath();
 	}
@@ -69,7 +79,7 @@
 		y = y * radius;
 
 		// 方位ライン描画
-		line(context, baseX, baseY, baseX + x, baseY + y * -1, '#f00');
+		line(context, baseX, baseY, baseX + x, baseY + y * -1, 1, '#f00');
 
 		// 方位角文字列描画
 		let fontPx = heightPx / 25
@@ -97,7 +107,7 @@
 				textY = baseY + y * - 1 - fontPx / 3;
 			}
 		}
-		context.fillStyle = "#0000ff";
+		context.fillStyle = "#00f";
   	context.fillText(degStr, textX, textY);
 	}
 
@@ -127,16 +137,85 @@
 		obj = getXYByDeg(337.5);					azimuthLine(context, obj.x, obj.y, "337.5");
 	}
 
+	/**
+	 * 方位角補助線
+	 */
+	const followLine = () => {
+
+		if ((mouseDownX == 0) && (mouseDownY == 0))
+			return;
+
+		let x = mouseDownX;
+		let y = mouseDownY;
+
+		const deg: string = getDegByXY(x, y).toFixed(1);
+
+  	const canvas: HTMLCanvasElement = document.getElementById("azimuth-canvas") as HTMLCanvasElement;
+    const context: CanvasRenderingContext2D = canvas.getContext("2d")!;
+		{
+			line(context, baseX, baseY, x, y, 4, '#0ff');
+
+			context.fillStyle = "#0ff";
+			const circle = new Path2D();
+			circle.arc(x, y, 4, 0, 2 * Math.PI);
+			context.fill(circle);
+
+			let fontPx = heightPx / 25
+			if (heightPx < 300) {
+				fontPx = 12;
+			}
+			context.font = "italic " + fontPx + "px serif";
+			context.fillStyle = "#00f";
+			context.fillText(deg, x + 4, y - 4);
+		}
+
+		if (drawNullPoint) {	// 直行LINE表示
+			let mx1 = baseX + (baseY - y);
+			let my1 = baseY - (baseX - x);
+			let mx2 = baseX - (baseY - y);
+			let my2 = baseY + (baseX - x);
+			line(context, mx1, my1, mx2, my2, 4, '#0ff');
+
+			// 直行角算出(deg)
+			orthogonalAngleDeg1 = getDegByXY(mx1, my1).toFixed(1);
+			orthogonalAngleDeg2 = getDegByXY(mx2, my2).toFixed(1);
+
+			// document.getElementById("orthogonal-deg1")!.innerText = orthogonalAngleDeg1 + "°";
+			// document.getElementById("orthogonal-deg2")!.innerText = orthogonalAngleDeg2 + "°";
+
+
+			let fontPx = heightPx / 40
+			if (heightPx < 300) {
+				fontPx = 10;
+			}
+			context.font = "italic " + fontPx + "px serif";
+			context.fillStyle = "#00f";
+			context.fillText(orthogonalAngleDeg1, mx1 + 4, my1 - 4);
+			context.fillText(orthogonalAngleDeg2, mx2 + 4, my2 - 4);
+		}
+	}
 
 	//--------------------
 	// events
-
+	/**
+	 * マウント時の処理
+	 */
 	onMount(() => {
-		onResize();
+		onRedraw();
 		window.addEventListener('resize', onResize);
 	})
 
-	function onResize() {
+	/**
+	 * ウィンドウリサイズ時の処理
+	 */
+	const onResize = () => {
+		onRedraw();
+	}
+
+	/**
+	 * 再描画
+	 */
+	const onRedraw = () => {
   	const canvas: HTMLCanvasElement = document.getElementById("azimuth-canvas") as HTMLCanvasElement;
     const context: CanvasRenderingContext2D = canvas.getContext("2d")!;
 
@@ -154,22 +233,61 @@
 		drawAzimuthLines(context);
 	}
 
-	const handleMove = (e: MouseEvent) => {
+	//--------------------
+	// event handlers
+
+	const handleMouseMove = (e: MouseEvent) => {
 		let x = e.offsetX;
 		let y = e.offsetY;
 		const deg: string = getDegByXY(x, y).toFixed(1);
 		document.getElementById("mouse-deg")!.innerText = deg + "°";
+
+		if (mouseDownFlag) {
+			mouseDownX = e.offsetX;
+			mouseDownY = e.offsetY;
+			onRedraw();
+			followLine();
+		}
 	}
-	
+
+	const handleMouseDown = (e: MouseEvent) => {
+		if (e.button == 0) {
+			mouseDownFlag = true;
+			mouseDownX = e.offsetX;
+			mouseDownY = e.offsetY;
+		}
+
+		onRedraw();
+		followLine();
+	}
+
+	const handleMouseUp = (e: MouseEvent) => {
+		mouseDownFlag = false;
+		mouseDownX = e.offsetX;
+		mouseDownY = e.offsetY;
+	}
+
+	const handleMouseOut = (e: MouseEvent) => {
+		mouseDownFlag = false;
+		mouseDownX = e.offsetX;
+		mouseDownY = e.offsetY;
+	}
 
 </script>
 
 <div>
 	方位角：<span id="mouse-deg">---</span>
+{#if drawNullPoint}
+	<!-- (直行角：<span id="orthogonal-deg1">---</span> / <span id="orthogonal-deg2">---</span>) -->
+{/if}
 </div>
+
 <canvas
 	id="azimuth-canvas"
-	on:mousemove={handleMove}
+	on:mousemove={handleMouseMove}
+	on:mousedown={handleMouseDown}
+	on:mouseup={handleMouseUp}
+	on:mouseout={handleMouseOut}
 />
 
 <style>

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	export let drawNullPoint = '';
-
-console.log('drawNullPoint = ' + drawNullPoint);
+	export let drawOrthAngle = false;
 
 	// reactivity values
 	let widthPx  = 0;	// canvas サイズ 幅
@@ -169,7 +167,7 @@ console.log('drawNullPoint = ' + drawNullPoint);
 			context.fillText(deg, x + 4, y - 4);
 		}
 
-		if (drawNullPoint) {	// 直行LINE表示
+		if (drawOrthAngle) {	// 直行LINE表示
 			let mx1 = baseX + (baseY - y);
 			let my1 = baseY - (baseX - x);
 			let mx2 = baseX - (baseY - y);
@@ -277,7 +275,7 @@ console.log('drawNullPoint = ' + drawNullPoint);
 
 <div>
 	方位角：<span id="mouse-deg">---</span>
-{#if drawNullPoint}
+{#if drawOrthAngle}
 	<!-- (直行角：<span id="orthogonal-deg1">---</span> / <span id="orthogonal-deg2">---</span>) -->
 {/if}
 </div>

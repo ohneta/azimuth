@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Azimuth from './Azimuth.svelte';
 
-	let drawNullPoint = false;
+	let drawOrthAngle: bool = false;
 
 </script>
 
@@ -18,14 +18,14 @@
 	<h1>方位角</h1>
 
 	<label>
-		<input type="checkbox" bind:checked={drawNullPoint} />
+		<input type="checkbox" bind:checked={drawOrthAngle} />
 		直行表示
 	</label>
 
-{#if drawNullPoint}
-	<Azimuth drawNullPoint={drawNullPoint} />
+{#if drawOrthAngle}
+	<Azimuth drawOrthAngle={drawOrthAngle} />
 {:else}
-	<Azimuth drawNullPoint={drawNullPoint} />
+	<Azimuth drawOrthAngle={drawOrthAngle} />
 {/if}
 
 </div>
